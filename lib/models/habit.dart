@@ -34,4 +34,12 @@ class Habit {
     final days = last7Days();
     return days.where((d) => completedDates.contains(d)).length;
   }
+
+  Habit copyWith({String? id, String? name, List<String>? completedDates}) {
+    return Habit(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      completedDates: completedDates ?? this.completedDates,
+    );
+  }
 }

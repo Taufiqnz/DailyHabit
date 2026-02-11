@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'add_habit_page.dart';
 import '../providers/habit_provider.dart';
 import '../utils/date_helper.dart';
+import 'stats_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -20,7 +21,19 @@ class HomePage extends StatelessWidget {
         ),
         centerTitle: true,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bar_chart),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const StatsPage()),
+              );
+            },
+          ),
+        ],
       ),
+
       body: Container(
         color: Theme.of(context).colorScheme.surface,
         child: Consumer<HabitProvider>(
@@ -79,41 +92,57 @@ class HomePage extends StatelessWidget {
 
                     // 🗑️ DELETE + UNDO
                     onLongPress: () {
-                      showDialog(
+                      showModalBottomSheet(
                         context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Hapus Habit'),
-                          content: Text('Yakin mau hapus "${habit.name}"?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Batal'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                habitProvider.deleteHabit(habit.id);
-                                Navigator.pop(context);
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Text('Habit dihapus'),
-                                    action: SnackBarAction(
-                                      label: 'UNDO',
-                                      onPressed: () {
-                                        habitProvider.undoDelete();
-                                      },
-                                    ),
-                                    duration: const Duration(seconds: 3),
+                        builder: (_) {
+                          return SafeArea(
+                            child: Wrap(
+                              children: [
+                                ListTile(
+                                  leading: const Icon(Icons.edit),
+                                  title: const Text('Edit'),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    _showEditDialog(context, habit);
+                                  },
+                                ),
+                                ListTile(
+                                  leading: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
                                   ),
-                                );
-                              },
-                              child: const Text(
-                                'Hapus',
-                                style: TextStyle(color: Colors.red),
-                              ),
+                                  title: const Text(
+                                    'Delete',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                  onTap: () {
+                                    Navigator.pop(context);
+
+                                    final provider = Provider.of<HabitProvider>(
+                                      context,
+                                      listen: false,
+                                    );
+
+                                    provider.deleteHabit(habit.id);
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text('Habit dihapus'),
+                                        action: SnackBarAction(
+                                          label: 'UNDO',
+                                          onPressed: () {
+                                            provider.undoDelete();
+                                          },
+                                        ),
+                                        duration: const Duration(seconds: 3),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          );
+                        },
                       );
                     },
                   ),
@@ -134,6 +163,40 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showEditDialog(BuildContext context, habit) {
+  final controller = TextEditingController(text: habit.name);
+
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text("Edit Habit"),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        decoration: const InputDecoration(labelText: "Nama Habit"),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Batal"),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (controller.text.trim().isNotEmpty) {
+              Provider.of<HabitProvider>(
+                context,
+                listen: false,
+              ).editHabit(habit.id, controller.text.trim());
+            }
+            Navigator.pop(context);
+          },
+          child: const Text("Simpan"),
+        ),
+      ],
+    ),
+  );
 }
 
 Widget buildEmptyState(BuildContext context) {

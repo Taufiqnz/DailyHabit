@@ -54,14 +54,16 @@ class HabitProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void deleteHabit(String habitId) {
-    _lastDeletedIndex = _habits.indexWhere((h) => h.id == habitId);
+  void deleteHabit(String id) {
+    final index = _habits.indexWhere((habit) => habit.id == id);
 
-    _lastDeletedHabit = _habits.firstWhere((h) => h.id == habitId);
+    if (index != -1) {
+      _lastDeletedHabit = _habits[index];
+      _lastDeletedIndex = index;
 
-    _habits.removeAt(_lastDeletedIndex!);
-    saveHabits();
-    notifyListeners();
+      _habits.removeAt(index);
+      notifyListeners();
+    }
   }
 
   void undoDelete() {
@@ -71,7 +73,18 @@ class HabitProvider extends ChangeNotifier {
       _lastDeletedHabit = null;
       _lastDeletedIndex = null;
 
-      saveHabits();
+      notifyListeners();
+    }
+  }
+
+  void editHabit(String id, String newName) {
+    final index = _habits.indexWhere((habit) => habit.id == id);
+
+    if (index != -1) {
+      final oldHabit = _habits[index];
+
+      _habits[index] = oldHabit.copyWith(name: newName);
+
       notifyListeners();
     }
   }
